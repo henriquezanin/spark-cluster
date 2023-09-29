@@ -1,0 +1,37 @@
+version: "3.3"
+services:
+  spark-master:
+    image: cluster-apache-spark:3.5.0
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - GITHUB_TOKEN=$GITHUB_TOKEN
+      labels:
+        app.retinabr.description: "spark"
+    command: ["/bin/bash", "/start-spark.sh"]
+    ports:
+      - "8080:8080"
+    volumes:
+       - ./apps:/apps
+       - /tmp/data:/data
+    environment:
+      - SPARK_LOCAL_IP=spark-master
+      - SPARK_WORKLOAD=master
+
+  spark-worker:
+    image: cluster-apache-spark:3.5.0
+    command: ["/bin/bash", "/start-spark.sh"]
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_MASTER=spark://spark-master:7077
+      - SPARK_WORKER_CORES=1
+      - SPARK_WORKER_MEMORY=1G
+      - SPARK_DRIVER_MEMORY=1G
+      - SPARK_EXECUTOR_MEMORY=1G
+      - SPARK_WORKLOAD=worker
+      - SPARK_LOCAL_IP=spark-worker
+    volumes:
+       - ./apps:/apps
+       - /tmp/data:/data
